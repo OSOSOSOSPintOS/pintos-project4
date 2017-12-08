@@ -4,7 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-
+#include "threads/synch.h"
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -17,6 +17,9 @@ enum thread_status
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
+
+struct thread;
+
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
 
 /* Thread priorities. */
@@ -80,6 +83,7 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+
 struct thread
   {
     /* Owned by thread.c. */
@@ -100,7 +104,40 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-  };
+
+		/* ----- for me ---- */
+	
+		int oPriority;		// original priority
+		struct list donate_list;	// donate_list
+
+		int nice;			// niceness
+		int recent_cpu;	// fixed_point format
+
+		// project2
+		struct child_info *Info;
+		struct file* e_file;
+};
+
+struct donate
+{
+	struct list_elem elem;
+	struct lock *l;
+	struct thread *donator;
+};
+
+struct child_info
+{
+	struct thread *parent;
+	struct list_elem elem;
+	struct semaphore w_sema;
+	struct semaphore e_sema;
+	tid_t tid;
+	int exitCode;
+	bool alreadyWait;
+	bool loadFail;
+};
+
+struct child_info* getCIFromTid(tid_t tid);
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -126,6 +163,8 @@ const char *thread_name (void);
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
+void checkCurrentThreadPriority(void);
+
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
@@ -137,5 +176,48 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+bool compare_pri(const struct list_elem *e1, const struct list_elem *e2, void *aux UNUSED);
+
+void inc_recent_cpu(void);
+void recalc_pri(void);
+void recalc_load(void);
+void recalc_cpu(void);
+int getReadyThread(void);
+int search_best_donator(struct list *dl);
+int mlfqs_calc_pri(struct thread* t);
+
+// project2
+
+struct thread* getThreadFromTid(tid_t tid);
+
+bool checkIsThread(char* filename);
+
+// fixed_point function
+
+int con_ntof(int x);
+
+int con_xton_zero(int x);
+
+int con_xton_near(int x);
+
+int addxy(int x, int y);
+
+int subxy(int x, int y);
+
+int addxn(int x, int n);
+
+int subxn(int x, int n);
+
+int mulxy(int x, int y);
+
+int mulxn(int x, int n);
+
+int divxy(int x, int y);
+
+int divxn(int x, int n);
+
+//struct thread* 
+//getThreadFromId(int id,int flag);
 
 #endif /* threads/thread.h */

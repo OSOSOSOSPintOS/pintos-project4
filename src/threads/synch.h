@@ -9,7 +9,7 @@ struct semaphore
   {
     unsigned value;             /* Current value. */
     struct list waiters;        /* List of waiting threads. */
-  };
+	};
 
 void sema_init (struct semaphore *, unsigned value);
 void sema_down (struct semaphore *);
@@ -40,6 +40,8 @@ void cond_init (struct condition *);
 void cond_wait (struct condition *, struct lock *);
 void cond_signal (struct condition *, struct lock *);
 void cond_broadcast (struct condition *, struct lock *);
+
+void lock_search_remove(struct list *dl, struct lock *lock);
 
 /* Optimization barrier.
 
