@@ -1,5 +1,5 @@
-#include "device/block.h"
-#include "thread/thread.h"
+#include "devices/block.h"
+#include "threads/thread.h"
 
 #define MAX_BUFFER_CACHE_NUM 64
 

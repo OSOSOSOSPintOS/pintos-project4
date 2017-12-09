@@ -13,7 +13,7 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
   struct buffer_cache *bce = NULL; 
   bce = (struct buffer_cache *)malloc(sizeof(struct buffer_cache));
   if(!bce){
-    buffer_cache_numm--;
+    buffer_cache_num--;
     return bce;
   }
   bce->inode = inode;
@@ -21,7 +21,7 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
   bce->cache_id = id;
   bce->cache = malloc(BLOCK_SECTOR_SIZE);
 
-  memcpy(bce->cache + sector_ofs, data + secotr_ofs, chunk_size);
+  memcpy(bce->cache + sector_ofs, data + sector_ofs, chunk_size);
   bce->sector_ofs = sector_ofs;
   bce->chunk_size = chunk_size;
 
@@ -37,9 +37,8 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
 // else return NULL
 struct buffer_cache *get_buffer_cache (struct inode *inode, block_sector_t sector_id){
   struct buffer_cache *bce = NULL;
-  struct list_elem *e;
 
-  struct list_elem *e = list_begin(&fd_list);
+  struct list_elem *e = list_begin(&buffer_cache_list);
 	for(e = list_begin(&buffer_cache_list); e!=list_end(&buffer_cache_list); e=list_next(e))
 	{
 		bce = list_entry(e, struct buffer_cache, elem);
