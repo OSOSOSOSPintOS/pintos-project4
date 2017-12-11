@@ -2,13 +2,13 @@
 
 struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t sector_id, void *data, int sector_ofs, int chunk_size){
   // struct thread *t = thread_current();
-  int id;
+  // int id;
 
   // need to execute function that check buffer_cahce_list is max size & evict cache from list and return that id
 
   // if buffer_cahce_list is not max
   buffer_cache_num++;
-  id = buffer_cache_num;
+  // id = buffer_cache_num;/
 
   struct buffer_cache *bce = NULL; 
   bce = (struct buffer_cache *)malloc(sizeof(struct buffer_cache));
@@ -18,7 +18,7 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
   }
   bce->inode = inode;
   bce->sector_id = sector_id;
-  bce->cache_id = id;
+  // bce->cache_id = id;
   bce->cache = malloc(BLOCK_SECTOR_SIZE);
 
   memcpy(bce->cache + sector_ofs, data + sector_ofs, chunk_size);

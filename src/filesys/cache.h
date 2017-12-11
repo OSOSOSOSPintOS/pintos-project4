@@ -4,7 +4,7 @@
 #define MAX_BUFFER_CACHE_NUM 64
 
 struct buffer_cache {
-  int cache_id; 
+  // int cache_id; 
   struct inode *inode;
   block_sector_t sector_id;
 
