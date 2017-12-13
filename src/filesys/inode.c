@@ -6,6 +6,7 @@
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
+#include "filesys/cache.h"
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
@@ -223,20 +224,40 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
           /* Read full sector directly into caller's buffer. */
-          block_read (fs_device, sector_idx, buffer + bytes_read);
+          struct buffer_cache *cache = NULL;
+          cache = get_buffer_cache(inode, sector_idx);
+          if(cache){
+            memcpy(buffer + bytes_read, cache->cache, cache->chunk_size);
+          }else{
+            block_read (fs_device, sector_idx, buffer + bytes_read);
+            cache = create_buffer_cache(inode, sector_idx, buffer + bytes_read, sector_ofs, chunk_size);
+            push_buffer_cache_to_list(cache);
+          }
         }
       else 
         {
           /* Read sector into bounce buffer, then partially copy
              into caller's buffer. */
-          if (bounce == NULL) 
+          struct buffer_cache *cache = NULL;
+          cache = get_buffer_cache(inode, sector_idx);
+          if(cache){
+            printf("in if state\n");
+            memcpy(buffer + bytes_read, cache->cache + cache->sector_ofs, cache->chunk_size);
+          }
+          else{
+            printf("in else state\n");
+
+            if (bounce == NULL) 
             {
               bounce = malloc (BLOCK_SECTOR_SIZE);
               if (bounce == NULL)
                 break;
             }
-          block_read (fs_device, sector_idx, bounce);
-          memcpy (buffer + bytes_read, bounce + sector_ofs, chunk_size);
+            block_read (fs_device, sector_idx, bounce);
+            memcpy (buffer + bytes_read, bounce + sector_ofs, chunk_size);
+            cache = create_buffer_cache(inode, sector_idx, bounce, sector_ofs, chunk_size);
+            push_buffer_cache_to_list(cache);
+          }
         }
       
       /* Advance. */
