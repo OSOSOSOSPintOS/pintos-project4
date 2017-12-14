@@ -5,6 +5,9 @@
     "limits": "c",
     "ratio": "c",
     "locale": "c",
-    "string": "c"
+    "string": "c",
+    "typeinfo": "c",
+    "__locale": "c",
+    "ios": "c"
   }
 }

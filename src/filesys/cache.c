@@ -8,16 +8,19 @@ bool check_init;
 
 void buffer_cache_init(){
   check_init = false;
+  
   int i;
+  lock_init(&buffer_cache_lock);
   for (i=0; i<64; i++){
     buffer_cache_list[i] = NULL;
   }
   buffer_cache_num = 0;
   old_one = 0;
+  // printf("initiating buff_cache\n");
   check_init = true;
 }
 
-struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t sector_id, void *data, int sector_ofs, int chunk_size){
+struct buffer_cache *create_buffer_cache (block_sector_t inode_sector, block_sector_t sector_id, void *data, int sector_ofs, int chunk_size){
 
   // need to execute function that check buffer_cahce_list is max size & evict cache from list and return that id
 
@@ -29,12 +32,12 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
   if(!bce){
     return bce;
   }
-  bce->inode = inode;
+  bce->inode_sector = inode_sector;
   bce->sector_id = sector_id;
   
   bce->cache = malloc(BLOCK_SECTOR_SIZE);
 
-  memcpy(bce->cache, data, chunk_size);
+  memcpy(bce->cache , data , BLOCK_SECTOR_SIZE);
   bce->sector_ofs = sector_ofs;
   bce->chunk_size = chunk_size;
 
@@ -47,9 +50,13 @@ struct buffer_cache *create_buffer_cache (struct inode *inode, block_sector_t se
 void push_buffer_cache_to_list (struct buffer_cache *cache){
   struct buffer_cache *front = NULL;
   struct list_elem *e;
+  lock_acquire(&buffer_cache_lock);
   if(buffer_cache_num >= 64){
     front = buffer_cache_list[old_one];
     buffer_cache_list[old_one] = NULL;
+    if(front->is_dirty){
+      // printf("is dirty\n");
+    }
     free(front->cache);
     free(front);
     buffer_cache_list[old_one] = cache;
@@ -61,12 +68,14 @@ void push_buffer_cache_to_list (struct buffer_cache *cache){
     if(!check_init){
       free(cache->cache);
       free(cache);
+      lock_release(&buffer_cache_lock);
       return;
     }
     buffer_cache_list[buffer_cache_num] = cache;
     buffer_cache_num++;
+    // printf("push new cache %d\n", buffer_cache_num);
   }
-  
+  lock_release(&buffer_cache_lock);
 }
 
 
@@ -74,11 +83,15 @@ void push_buffer_cache_to_list (struct buffer_cache *cache){
 // if buffer_cahce_list has buffer_cache which inode and sector_id is same with INODE and SECTOR_id  
 // then return that buffer_cache
 // else return NULL
-struct buffer_cache *get_buffer_cache (struct inode *inode, block_sector_t sector_id){
+struct buffer_cache *get_buffer_cache (block_sector_t inode_sector, block_sector_t sector_id){
   int i;
   struct buffer_cache *bce = NULL;
 
+  lock_acquire(&buffer_cache_lock);
+
+
   if(!check_init){
+    lock_release(&buffer_cache_lock);
     return NULL;
   }
   struct list_elem *e = list_begin(&buffer_cache_list);
@@ -88,10 +101,12 @@ struct buffer_cache *get_buffer_cache (struct inode *inode, block_sector_t secto
     if(bce == NULL){
       continue;
     }
-		if(bce->inode == inode && bce->sector_id == sector_id){
+		if(bce->inode_sector == inode_sector && bce->sector_id == sector_id){
+      lock_release(&buffer_cache_lock);
       return bce;
     }
 	}
+  lock_release(&buffer_cache_lock);
   return NULL;
 }
 
