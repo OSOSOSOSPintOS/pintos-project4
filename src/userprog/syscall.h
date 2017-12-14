@@ -33,9 +33,17 @@ void syscall_tell(struct intr_frame *f,int argsNum);
 
 void syscall_close(struct intr_frame *f,int argsNum);
 
+void syscall_isdir (struct intr_frame *f, int argsNum);
+
+void syscall_mkdir (struct intr_frame *f, int argsNum);
+
+void syscall_chdir (struct intr_frame *f, int argsNum);
+
 int currentFd(struct thread *cur);
 
 struct file* getFile(int fd,struct thread *cur);
+
+struct fd_elem* getElem(int fd, struct thread *cur);
 
 void elemFile(struct file *file);
 
@@ -45,6 +53,7 @@ struct fd_elem{
 	struct list_elem elem;
 	struct thread* owner;
 	struct file *file;
+	struct dir *dir;
 	char* filename;
 	int fd;
 	bool isEXE;

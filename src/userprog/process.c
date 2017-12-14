@@ -136,6 +136,10 @@ start_process (void *file_name_)
 
 	char* ptrptr;
 
+  if(cur->cwd == NULL){
+    cur->cwd = dir_open_root();
+  }
+
 	file_name = strtok_r(file_name," ",&ptrptr);						// recheck
 
 	/* Initialize interrupt frame and load executable. */
@@ -276,6 +280,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  struct dir *cwd = cur->cwd;
   uint32_t *pd;
 
   /* Destroy the current process's page directory and switch back
@@ -297,8 +302,12 @@ process_exit (void)
 	
 	struct child_info *ci = getCIFromTid(cur->tid);
 	sema_up(&ci->w_sema);
+  
 
 	remove_ci(cur);
+  // if(cwd){
+  //   dir_close(cwd);
+  // }
 }
 
 /* Sets up the CPU for running user code in the current

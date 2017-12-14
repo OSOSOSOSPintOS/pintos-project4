@@ -29,5 +29,7 @@ bool dir_readdir (struct dir *, char name[NAME_MAX + 1]);
 
 /* custom function */
 void split_path(char *origin, char *dir_path, char *file_name);
+struct dir *get_dir(char *path);
+bool dir_change(char *path);
 
 #endif /* filesys/directory.h */

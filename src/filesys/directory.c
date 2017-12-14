@@ -5,6 +5,7 @@
 #include "filesys/filesys.h"
 #include "filesys/inode.h"
 #include "threads/malloc.h"
+#include "threads/thread.h"
 
 /* A directory. */
 struct dir 
@@ -26,6 +27,7 @@ struct dir_entry
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
+  printf("dir create\n");
   return inode_create (sector, entry_cnt * sizeof (struct dir_entry), 1);
 }
 
@@ -145,6 +147,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   off_t ofs;
   bool success = false;
 
+  printf("dir %d file %s\n", dir, name);
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
 
@@ -165,16 +168,27 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
      read due to something intermittent such as low memory. */
   for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
        ofs += sizeof e) 
-    if (!e.in_use)
-      break;
+       {
+        if (!e.in_use){
+          printf("not in used\n");
+          break;
+        }
+      }
+      // break;
 
   /* Write slot. */
   e.in_use = true;
   strlcpy (e.name, name, sizeof e.name);
   e.inode_sector = inode_sector;
-  success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
+  
+  // printf("size of e %d offset %d\n", sizeof e, ofs);
 
+  int size = sizeof e;
+  printf("size of e %d\n", sizeof e);
+  success = inode_write_at (dir->inode, &e, size, ofs) == size;
+  
  done:
+   printf("%d \n", success);
   return success;
 }
 
@@ -274,5 +288,109 @@ void split_path(char *origin, char *path, char *file_name){
     strlcpy(file_name, token, strlen(token) + 1);
   }
 
+  
+}
 
+struct dir *get_dir(char *path){
+  char *dirs[strlen(path)/2+1];
+  char copy[strlen(path) + 1];
+  int dir_num = 0;
+  struct dir *dir = NULL;
+  struct thread *t = thread_current();
+  char *token = NULL;
+  char *ptr = NULL;
+  bool is_abs = false;
+  int i, j;
+
+  strlcpy(copy, path, strlen(path)+1);
+  
+  if(!strcmp(copy, "")){
+    return dir_open_root();
+  }
+
+  if(!strcmp(copy, "/")){
+    return dir_open_root();
+  } 
+
+  if(copy[0] == '/'){
+    //absolute path
+    is_abs = true;    
+  }
+
+  printf("path %s\n", copy);
+
+  for(token = strtok_r(copy, "/", &ptr); token != NULL; token = strtok_r(NULL, "/", &ptr)){
+
+    dirs[dir_num] = calloc(1, strlen(token) + 1);
+    strlcpy(dirs[dir_num], token, strlen(token) + 1);
+    printf("token : %s, dirs : %s\n", dirs[dir_num], token );
+    dir_num++;
+  }
+
+  if(is_abs){
+    dir = dir_open_root();
+  }else {
+    if(t->cwd == NULL){
+      dir = dir_open_root();
+    }else{
+      dir = dir_reopen(t->cwd);
+    }
+    
+  }
+  printf("cur setting\n");
+  for(i=0; i<dir_num; i++){
+    struct inode *inode = NULL;
+      printf("dirs %s %d\n", dirs[i], dir_num);
+
+    if(strcmp(dirs[i], ".") == 0){
+      continue;
+    }
+    if(strcmp(dirs[i], "..") == 0){
+      // continue;
+      // parent dir
+    }
+    if(!dir_lookup(dir, dirs[i], &inode)){
+      printf("can't find %s\n", dirs[i]);
+      for(j=0; j<dir_num; j++){
+        free(dirs[j]);
+      }
+      return NULL;
+    }
+    printf("before close\n");
+
+    dir_close(dir);
+    printf("after close\n");
+    dir = dir_open(inode);
+    printf("after setting\n");
+    if(!dir){
+      printf("can't find %s\n", dirs[i]);
+      for(j=0; j<dir_num; j++){
+        free(dirs[j]);
+      }
+      return NULL;
+    }
+  }
+
+  for(j=0; j<dir_num; j++){
+    free(dirs[j]);
+  }
+
+  printf("before return\n");
+  return dir;
+}
+
+
+bool dir_change(char *path){
+  struct dir *dir;
+ 	struct thread *t = thread_current();
+
+  dir = get_dir(path);
+  if(dir == NULL){
+    return false;
+  }
+  if(t->cwd){
+      dir_close(t->cwd);
+  }
+  t->cwd = dir;
+  return true;
 }

@@ -115,7 +115,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-
+  
 	if(thread_mlfqs){
 		initial_thread->nice = 0;
 		initial_thread->recent_cpu = 0;
@@ -278,6 +278,9 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   intr_set_level (old_level);
+
+  t->cwd = thread_current()->cwd;
+  
 
 	if(thread_mlfqs){
 		t->recent_cpu = thread_current()->recent_cpu;
@@ -736,6 +739,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = t->oPriority = priority;		// modified
   t->magic = THREAD_MAGIC;
+  t->cwd = NULL;
 	list_init(&t->donate_list);
   list_insert_ordered (&all_list, &t->allelem,compare_pri,(void *)NULL);
 }

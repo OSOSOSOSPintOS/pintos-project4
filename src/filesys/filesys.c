@@ -51,14 +51,74 @@ filesys_done (void)
    Fails if a file named NAME already exists,
    or if internal memory allocation fails. */
 bool
-filesys_create (const char *name, off_t initial_size) 
+filesys_create (const char *name, off_t initial_size, int is_dir) 
 {
   block_sector_t inode_sector = 0;
-  struct dir *dir = dir_open_root ();
+  char path[strlen(name)+1];
+  char file_name[strlen(name)+1];
+  struct thread *t = thread_current();
+  struct dir *dir = NULL;
+
+  printf("create\n");
+  split_path(name, path, file_name);
+  if(strcmp(path, "") != 0 ){
+    
+    dir = get_dir(path);
+    printf("find dir\n");
+
+  }else{
+    if(t->cwd == NULL){
+      dir = dir_open_root();
+            printf("root \n");
+    }else{
+      dir = dir_reopen(t->cwd);
+            printf("current \n");
+    }
+  }
+
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size, 0)
-                  && dir_add (dir, name, inode_sector));
+                  && dir_add (dir, file_name, inode_sector));
+  if (!success && inode_sector != 0) 
+    free_map_release (inode_sector, 1);
+  dir_close (dir);
+
+  return success;
+}
+
+bool filesys_mkdir (const char *name) 
+{
+  block_sector_t inode_sector = 0;
+  char path[strlen(name)+1];
+  char dir_name[strlen(name)+1];
+  struct thread *t = thread_current();
+  struct dir *dir = NULL;
+
+  printf("mkdir\n");
+  split_path(name, path, dir_name);
+  if(strcmp(path, "") != 0 ){
+    dir = get_dir(path);
+        printf("find dir\n");
+
+  }else{
+    if(t->cwd == NULL){
+
+      dir = dir_open_root();
+                  printf("root \n");
+
+    }else{
+
+      dir = dir_reopen(t->cwd);
+                  printf("current \n");
+
+    }
+  }
+
+  bool success = (dir != NULL
+                  && free_map_allocate (1, &inode_sector)
+                  && dir_create (inode_sector, 0)
+                  && dir_add (dir, dir_name, inode_sector));
   if (!success && inode_sector != 0) 
     free_map_release (inode_sector, 1);
   dir_close (dir);
@@ -74,13 +134,22 @@ filesys_create (const char *name, off_t initial_size)
 struct file *
 filesys_open (const char *name)
 {
-  struct dir *dir = dir_open_root ();
+  struct dir *dir =  NULL;
   struct inode *inode = NULL;
+  char path[strlen(name)+1];
+  char file_name[strlen(name)+1];
+  struct thread *t = thread_current();
 
-  char path[100];
-  char file_name[100];
   split_path(name, path, file_name);
-  // printf("%s %s\n", path, file_name);  
+  if(strcmp(path, "") != 0 ){
+    dir = get_dir(path);
+  }else{
+    if(t->cwd == NULL){
+      dir = dir_open_root();
+    }else{
+      dir = dir_reopen(t->cwd);
+    }
+  }
 
   if (dir != NULL)
     dir_lookup (dir, file_name, &inode);
@@ -96,8 +165,22 @@ filesys_open (const char *name)
 bool
 filesys_remove (const char *name) 
 {
-  struct dir *dir = dir_open_root ();
-  bool success = dir != NULL && dir_remove (dir, name);
+  struct dir *dir =  NULL;
+  char path[strlen(name)+1];
+  char file_name[strlen(name)+1];
+  struct thread *t = thread_current();
+
+  split_path(name, path, file_name);
+  if(strcmp(path, "") != 0 ){
+    dir = get_dir(path);
+  }else{
+    if(t->cwd == NULL){
+      dir = dir_open_root();
+    }else{
+      dir = dir_reopen(t->cwd);
+    }
+  }
+  bool success = dir != NULL && dir_remove (dir, file_name);
   dir_close (dir); 
 
   return success;

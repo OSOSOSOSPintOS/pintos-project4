@@ -116,6 +116,8 @@ struct thread
 		// project2
 		struct child_info *Info;
 		struct file* e_file;
+
+    struct dir *cwd;
 };
 
 struct donate

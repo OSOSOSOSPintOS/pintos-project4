@@ -130,12 +130,14 @@ void buffer_cache_read(block_sector_t sector_id, void *buffer){
   int i;
   bce = get_buffer_cache(sector_id);
   if(bce){
+    printf("cache hit %d\n", sector_id);
     memcpy(buffer, bce->cache, BLOCK_SECTOR_SIZE);
   }
   else{
     block_read (fs_device, sector_id, buffer);
     bce = create_buffer_cache(sector_id, buffer);
     push_buffer_cache_to_list(bce);
+    printf("cache make %d\n", sector_id);
   }
 
   lock_release(&buffer_cache_lock);
@@ -148,13 +150,16 @@ void buffer_cache_write(block_sector_t sector_id, void *buffer){
   int i;
   bce = get_buffer_cache(sector_id);
   if(bce){
+    printf("cache hit %d\n", sector_id);
     memcpy(bce->cache, buffer, BLOCK_SECTOR_SIZE);
   }
   else{
     // void *temp = malloc(BLOCK_SECTOR_SIZE);
     // block_read (fs_device, sector_idx, temp);
+
     bce = create_buffer_cache(sector_id, buffer);
     push_buffer_cache_to_list(bce);
+    printf("cache make %d\n", sector_id);
     // memcpy(cache->cache, buffer, chunk_size);
   }
 

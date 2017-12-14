@@ -9,6 +9,8 @@
 
 #include "filesys/file.h"
 #include "devices/input.h"
+#include "filesys/directory.h"
+#include "filesys/inode.h"
 
 #define checkARG 	if((uint32_t)esp > 0xc0000000-(argsNum+1)*4) \
 										syscall_exit(f,argsNum);
@@ -43,6 +45,22 @@ struct file* getFile(int fd, struct thread *cur)
 			result = fe->file;
 			if(fe->isEXE)
 				file_deny_write(fe->file);
+			break;
+		}
+	}
+	return result;
+}
+
+struct fd_elem* getElem(int fd, struct thread *cur)
+{
+	struct list_elem *e = list_begin(&fd_list);
+	struct fd_elem* result = NULL;
+	for(;e!=list_end(&fd_list);e=list_next(e))
+	{
+		struct fd_elem *fe = list_entry(e,struct fd_elem, elem);
+		if(fe->owner == cur && fe->fd == fd)
+		{
+			result = fe;
 			break;
 		}
 	}
@@ -89,6 +107,12 @@ syscall_handler (struct intr_frame *f)
 									 break;
 		case SYS_CLOSE: syscall_close(f,1);                  /* Close a file. */
 										break;
+		case SYS_CHDIR: syscall_chdir(f,1);                  /* Change directory. */
+									 break;
+		case SYS_MKDIR: syscall_mkdir(f,1);                  /* Make directory. */
+									 break;
+		case SYS_ISDIR: syscall_isdir(f,1);                  /* Check file is a directory */
+									 break;
 	}	
 }
 
@@ -212,7 +236,7 @@ void syscall_create(struct intr_frame *f,int argsNum){
 	}
 	lock_acquire(&FILELOCK);
 	// printf("in create\n");
-	bool result = filesys_create(file,initial_size);
+	bool result = filesys_create(file,initial_size, 0);
 	lock_release(&FILELOCK);
 	f->eax = (int)result;
 }
@@ -255,6 +279,12 @@ void syscall_open(struct intr_frame *f,int argsNum){
 		fe->file = file;
 		fe->fd = currentFd(fe->owner)+2;	// above 2
 		fe->filename = filename;
+		if (is_inode_dir(file_get_inode (fe->file))){
+			fe->dir = dir_open (file_get_inode (fe->file));
+		}else{
+			fe->dir = NULL;
+		}
+
 		if(checkIsThread(filename))
 		{
 			fe->isEXE = true;
@@ -305,8 +335,13 @@ void syscall_read(struct intr_frame *f,int argsNum){
 		f->eax = -1;
 	} else {
 		struct file *file = getFile(fd,thread_current());
+		
+		
 		if (file != NULL)
 		{
+			if(is_inode_dir (file_get_inode (file))){
+				f->eax = -1;
+			}
 			if(file_tell(file) >= file_length(file))
 				f->eax = 0;
 			else f->eax = file_read(file,buffer,size);
@@ -334,8 +369,12 @@ void syscall_write (struct intr_frame *f,int argsNum)
 		f->eax = -1;
 	} else {
 		struct file *file = getFile(fd,thread_current());
+		
 		if (file != NULL)
 		{
+			if(is_inode_dir (file_get_inode (file))){
+				f->eax = -1;
+			}
 			if(file_tell(file) >= file_length(file))	// EOF
 				f->eax = 0;
 			else f->eax = file_write(file,buffer,size);
@@ -404,6 +443,10 @@ void syscall_close(struct intr_frame *f,int argsNum){
 	struct thread* cur = thread_current();
 	struct file *file = getFile(fd,cur);
 	lock_acquire(&FILELOCK);
+	if(is_inode_dir (file_get_inode (file))){
+			struct fd_elem *fe = getElem(fd, cur);
+			dir_close (fe->dir);
+	}
 	if(file != NULL)
 	{
 		file_close(file);
@@ -412,3 +455,65 @@ void syscall_close(struct intr_frame *f,int argsNum){
 	lock_release(&FILELOCK);
 }
 
+void syscall_isdir (struct intr_frame *f, int argsNum) {
+	void*esp = f->esp;
+	checkARG
+
+	int fd = *(int *)(esp+4);
+
+	bool result = false;
+	struct file *file = getFile(fd, thread_current());
+	result = is_inode_dir (file_get_inode (file));
+
+	f->eax = result;
+}
+
+void syscall_mkdir (struct intr_frame *f, int argsNum) {
+
+
+	void*esp = f->esp;
+	checkARG
+
+	char* dirname = *(char **)(esp+4);
+
+	if(dirname == NULL){
+		f->eax = false;
+		return;
+	}
+
+	if(!strcmp(dirname, "/")){
+		f->eax = false;
+		return;
+	}
+
+	bool result = filesys_mkdir(dirname);
+	f->eax = result;
+
+	
+}
+
+void syscall_chdir (struct intr_frame *f, int argsNum) {
+	void*esp = f->esp;
+	checkARG
+
+	char* dirname = *(char **)(esp+4);
+	struct thread *t = thread_current();
+
+	if(dirname == NULL){
+		f->eax = false;
+		return;
+	}
+
+	if(!strcmp(dirname, "")){
+		f->eax = true;
+		if(t->cwd){
+			dir_close(t->cwd);
+		}
+		t->cwd = dir_open_root ();
+		return;
+	}
+
+	bool result = dir_change(dirname);
+	f->eax = result;
+	
+}
