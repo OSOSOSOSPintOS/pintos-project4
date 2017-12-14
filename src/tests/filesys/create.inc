@@ -11,5 +11,6 @@ test_main (void)
 {
   const char *file_name = "blargle";
   CHECK (create (file_name, TEST_SIZE), "create \"%s\"", file_name);
+  
   check_file (file_name, buf, TEST_SIZE);
 }

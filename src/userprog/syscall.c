@@ -211,6 +211,7 @@ void syscall_create(struct intr_frame *f,int argsNum){
 		return;
 	}
 	lock_acquire(&FILELOCK);
+	// printf("in create\n");
 	bool result = filesys_create(file,initial_size);
 	lock_release(&FILELOCK);
 	f->eax = (int)result;
@@ -291,6 +292,7 @@ void syscall_read(struct intr_frame *f,int argsNum){
 	uint32_t size = *(uint32_t *)(esp+12);
 	
 	if(buffer>(unsigned int)0xc0000000) syscall_exit(f,-1);
+	
 	lock_acquire(&FILELOCK);
 	if(fd == 0){
 		uint32_t i;

@@ -25,12 +25,13 @@ filesys_init (bool format)
   inode_init ();
   free_map_init ();
 
+  buffer_cache_init();
+
+
   if (format) 
     do_format ();
 
   free_map_open ();
-  list_init(&buffer_cache_list);
-  buffer_cache_num = 0;
 }
 
 /* Shuts down the file system module, writing any unwritten data
@@ -38,7 +39,10 @@ filesys_init (bool format)
 void
 filesys_done (void) 
 {
+  // printf("filesys done\n");
+  
   free_map_close ();
+  clear_buffer_cache_list();
 }
 
 /* Creates a file named NAME with the given INITIAL_SIZE.

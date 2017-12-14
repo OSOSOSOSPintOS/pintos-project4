@@ -1,0 +1,20 @@
+{
+  "files.associations": {
+    "algorithm": "c",
+    "chrono": "c",
+    "limits": "c",
+    "ratio": "c",
+    "locale": "c",
+    "string": "c",
+    "typeinfo": "c",
+    "__locale": "c",
+    "ios": "c",
+    "list": "c",
+    "string_view": "c",
+    "bitset": "c",
+    "initializer_list": "c",
+    "iterator": "c",
+    "memory": "c",
+    "utility": "c"
+  }
+}
