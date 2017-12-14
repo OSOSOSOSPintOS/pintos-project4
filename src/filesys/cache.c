@@ -1,5 +1,6 @@
 #include "filesys/cache.h"
 #include "filesys/filesys.h"
+#include "filesys/directory.h"
 
 
 struct buffer_cache *buffer_cache_list[64];
@@ -11,6 +12,8 @@ void buffer_cache_init(){
   check_init = false;
   
   int i;
+
+  
   lock_init(&buffer_cache_lock);
   for (i=0; i<64; i++){
     buffer_cache_list[i] = NULL;

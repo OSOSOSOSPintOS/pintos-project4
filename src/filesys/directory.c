@@ -26,7 +26,7 @@ struct dir_entry
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
-  return inode_create (sector, entry_cnt * sizeof (struct dir_entry));
+  return inode_create (sector, entry_cnt * sizeof (struct dir_entry), 1);
 }
 
 /* Opens and returns the directory for the given INODE, of which
@@ -233,4 +233,46 @@ dir_readdir (struct dir *dir, char name[NAME_MAX + 1])
         } 
     }
   return false;
+}
+
+
+/* Custom function */
+void split_path(char *origin, char *path, char *file_name){
+  char copy[strlen(origin)+1];
+  bool is_abs = false;
+  char *ptr = NULL;
+  char *token = NULL;
+
+
+  strlcpy(copy, origin, strlen(origin) + 1);
+
+  if(copy[0] == '\0'){
+    //empty
+    strlcpy(path, "", strlen("") + 1);
+    strlcpy(file_name, "", strlen("") + 1);
+    return;
+  }
+
+  if(copy[0] == '/'){
+    //absolute path
+    is_abs = true;
+  }
+
+  if(is_abs){
+    strlcpy(path, "/", strlen("/") + 1);
+  }else{
+    strlcpy(path, "", strlen("") + 1);
+
+  }
+
+  token = strtok_r(copy, "/", &ptr);
+  strlcpy(file_name, token, strlen(token) + 1);
+
+  for(token = strtok_r(NULL, "/", &ptr); token != NULL; token = strtok_r(NULL, "/", &ptr)){
+    strlcat(path, file_name, strlen(path) + strlen(file_name) + 1 );
+    strlcat(path, "/", strlen(path) + strlen("/") + 1);
+    strlcpy(file_name, token, strlen(token) + 1);
+  }
+
+
 }
