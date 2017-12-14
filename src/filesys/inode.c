@@ -228,31 +228,13 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
           /* Read full sector directly into caller's buffer. */
-          struct buffer_cache *cache = NULL;
-          cache = get_buffer_cache(inode->sector, sector_idx);
-          if(cache){
-            
-            printf("in if state // R1 %d, %d\n", sector_idx, inode->sector);
-            memcpy(buffer + bytes_read, cache->cache, chunk_size);
-          }else{
-            printf("in else state // R1 %d, %d\n", sector_idx, inode->sector);
-            block_read (fs_device, sector_idx, buffer + bytes_read);
-            cache = create_buffer_cache(inode->sector, sector_idx, buffer + bytes_read, sector_ofs, chunk_size);
-            push_buffer_cache_to_list(cache);
-          }
+          buffer_cache_read(sector_idx, buffer + bytes_read);
         }
       else 
         {
           /* Read sector into bounce buffer, then partially copy
              into caller's buffer. */
-          struct buffer_cache *cache = NULL;
-          cache = get_buffer_cache(inode->sector, sector_idx);
-          if(cache){
-            printf("in if state // R2 %d, %d\n", sector_idx, inode->sector);
-            memcpy(buffer + bytes_read, cache->cache + sector_ofs, chunk_size);
-          }
-          else{
-            printf("in else state // R2 %d, %d\n", sector_idx, inode->sector);
+            // printf("in else state // R2 %d, %d\n", sector_idx, inode->sector);
 
             if (bounce == NULL) 
             {
@@ -260,11 +242,8 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
               if (bounce == NULL)
                 break;
             }
-            block_read (fs_device, sector_idx, bounce);
+            buffer_cache_read(sector_idx, bounce);
             memcpy (buffer + bytes_read, bounce + sector_ofs, chunk_size);
-            cache = create_buffer_cache(inode->sector, sector_idx, bounce, sector_ofs, chunk_size);
-            push_buffer_cache_to_list(cache);
-          }
         }
       
       /* Advance. */
@@ -310,30 +289,12 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
           /* Write full sector directly to disk. */
-          struct buffer_cache *cache = NULL;
-          cache = get_buffer_cache(inode->sector, sector_idx);
-          if(cache){
-            printf("in if state // W1 %d, %d\n", sector_idx, inode->sector);
-
-            memcpy(cache->cache, buffer + bytes_written, cache->chunk_size);
-            cache->is_dirty = true;
-          }else{
-            printf("in else state // W1 %d, %d\n", sector_idx, inode->sector);
-            block_write (fs_device, sector_idx, buffer + bytes_written);
-          }
+          buffer_cache_write(sector_idx, buffer + bytes_written);
         }
       else 
         {
-          struct buffer_cache *cache = NULL;
-          cache = get_buffer_cache(inode->sector, sector_idx);
-          if(cache){
-            printf("in if state // W2 %d, %d\n", sector_idx, inode->sector);
-            memcpy(cache->cache + sector_ofs, buffer + bytes_written, chunk_size);
-            cache->is_dirty = true;
-          }
-          else{
+          
           /* We need a bounce buffer. */
-            printf("in else state // W2 %d, %d\n", sector_idx, inode->sector);
             if (bounce == NULL) 
               {
                 bounce = malloc (BLOCK_SECTOR_SIZE);
@@ -345,12 +306,11 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
               we're writing, then we need to read in the sector
               first.  Otherwise we start with a sector of all zeros. */
             if (sector_ofs > 0 || chunk_size < sector_left) 
-              block_read (fs_device, sector_idx, bounce);
+              buffer_cache_read (sector_idx, bounce);
             else
               memset (bounce, 0, BLOCK_SECTOR_SIZE);
             memcpy (bounce + sector_ofs, buffer + bytes_written, chunk_size);
-            block_write (fs_device, sector_idx, bounce);
-          }
+            buffer_cache_write (sector_idx, bounce);
         }
 
       /* Advance. */

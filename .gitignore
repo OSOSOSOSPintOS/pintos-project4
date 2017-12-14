@@ -1,6 +1,11 @@
 # Prerequisites
 *.d
 
+#vscode
+.vscode/settings.json
+.vscode/ftp-sync.json
+.vscode/
+
 # Object files
 *.o
 *.ko
