@@ -210,10 +210,13 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     {
       /* Disk sector to read, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
+
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
 
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
       off_t inode_left = inode_length (inode) - offset;
+      
+
       int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
       int min_left = inode_left < sector_left ? inode_left : sector_left;
 
@@ -229,10 +232,10 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
           cache = get_buffer_cache(inode->sector, sector_idx);
           if(cache){
             
-            // printf("in if state // R1 %d, %d\n", sector_idx, inode->sector);
+            printf("in if state // R1 %d, %d\n", sector_idx, inode->sector);
             memcpy(buffer + bytes_read, cache->cache, chunk_size);
           }else{
-            // printf("in else state // R1 %d, %d\n", sector_idx, inode->sector);
+            printf("in else state // R1 %d, %d\n", sector_idx, inode->sector);
             block_read (fs_device, sector_idx, buffer + bytes_read);
             cache = create_buffer_cache(inode->sector, sector_idx, buffer + bytes_read, sector_ofs, chunk_size);
             push_buffer_cache_to_list(cache);
@@ -245,11 +248,11 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
           struct buffer_cache *cache = NULL;
           cache = get_buffer_cache(inode->sector, sector_idx);
           if(cache){
-            // printf("in if state // R2 %d, %d\n", sector_idx, inode->sector);
+            printf("in if state // R2 %d, %d\n", sector_idx, inode->sector);
             memcpy(buffer + bytes_read, cache->cache + sector_ofs, chunk_size);
           }
           else{
-            // printf("in else state // R2 %d, %d\n", sector_idx, inode->sector);
+            printf("in else state // R2 %d, %d\n", sector_idx, inode->sector);
 
             if (bounce == NULL) 
             {
@@ -286,7 +289,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
-
   if (inode->deny_write_cnt)
     return 0;
 
@@ -295,7 +297,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       /* Sector to write, starting byte offset within sector. */
       block_sector_t sector_idx = byte_to_sector (inode, offset);
       int sector_ofs = offset % BLOCK_SECTOR_SIZE;
-
       /* Bytes left in inode, bytes left in sector, lesser of the two. */
       off_t inode_left = inode_length (inode) - offset;
       int sector_left = BLOCK_SECTOR_SIZE - sector_ofs;
@@ -312,12 +313,12 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
           struct buffer_cache *cache = NULL;
           cache = get_buffer_cache(inode->sector, sector_idx);
           if(cache){
-            // printf("in if state // W1 %d, %d\n", sector_idx, inode->sector);
+            printf("in if state // W1 %d, %d\n", sector_idx, inode->sector);
 
             memcpy(cache->cache, buffer + bytes_written, cache->chunk_size);
             cache->is_dirty = true;
           }else{
-            // printf("in else state // W1 %d, %d\n", sector_idx, inode->sector);
+            printf("in else state // W1 %d, %d\n", sector_idx, inode->sector);
             block_write (fs_device, sector_idx, buffer + bytes_written);
           }
         }
@@ -326,13 +327,13 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
           struct buffer_cache *cache = NULL;
           cache = get_buffer_cache(inode->sector, sector_idx);
           if(cache){
-            // printf("in if state // W2 %d, %d\n", sector_idx, inode->sector);
+            printf("in if state // W2 %d, %d\n", sector_idx, inode->sector);
             memcpy(cache->cache + sector_ofs, buffer + bytes_written, chunk_size);
             cache->is_dirty = true;
           }
           else{
           /* We need a bounce buffer. */
-            // printf("in else state // W2 %d, %d\n", sector_idx, inode->sector);
+            printf("in else state // W2 %d, %d\n", sector_idx, inode->sector);
             if (bounce == NULL) 
               {
                 bounce = malloc (BLOCK_SECTOR_SIZE);

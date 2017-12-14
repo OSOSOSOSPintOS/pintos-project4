@@ -1,4 +1,5 @@
 #include "filesys/cache.h"
+#include "filesys/filesys.h"
 
 
 struct buffer_cache *buffer_cache_list[64];
@@ -55,7 +56,8 @@ void push_buffer_cache_to_list (struct buffer_cache *cache){
     front = buffer_cache_list[old_one];
     buffer_cache_list[old_one] = NULL;
     if(front->is_dirty){
-      // printf("is dirty\n");
+      block_write (fs_device, front->sector_id, front->cache);
+      front->is_dirty = false;
     }
     free(front->cache);
     free(front);
@@ -78,6 +80,22 @@ void push_buffer_cache_to_list (struct buffer_cache *cache){
   lock_release(&buffer_cache_lock);
 }
 
+void clear_buffer_cache_list(){
+  int i;
+  // lock_acquire(&buffer_cache_lock);
+  for(i=0; i<64; i++){
+    if(buffer_cache_list[i] != NULL){
+      if(buffer_cache_list[i]->is_dirty){
+        block_write (fs_device, buffer_cache_list[i]->sector_id, buffer_cache_list[i]->cache);
+        buffer_cache_list[i]->is_dirty = false;
+      }
+      free(buffer_cache_list[i]->cache);
+      free(buffer_cache_list[i]);
+      buffer_cache_list[i] = NULL;
+    }
+  }
+  // lock_release(&buffer_cache_lock);
+}
 
 
 // if buffer_cahce_list has buffer_cache which inode and sector_id is same with INODE and SECTOR_id  

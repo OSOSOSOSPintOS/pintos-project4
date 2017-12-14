@@ -8,6 +8,8 @@
     "string": "c",
     "typeinfo": "c",
     "__locale": "c",
-    "ios": "c"
+    "ios": "c",
+    "list": "c",
+    "string_view": "c"
   }
 }

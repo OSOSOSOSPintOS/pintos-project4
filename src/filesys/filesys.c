@@ -40,7 +40,9 @@ void
 filesys_done (void) 
 {
   // printf("filesys done\n");
+  
   free_map_close ();
+  clear_buffer_cache_list();
 }
 
 /* Creates a file named NAME with the given INITIAL_SIZE.
