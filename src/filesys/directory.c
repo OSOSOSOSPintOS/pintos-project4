@@ -166,11 +166,9 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
      read due to something intermittent such as low memory. */
   for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
        ofs += sizeof e) 
-       {
-        if (!e.in_use){
+        if (!e.in_use)
           break;
-        }
-      }
+
       // break;
 
   /* Write slot. */
@@ -180,8 +178,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   
   // printf("size of e %d offset %d\n", sizeof e, ofs);
 
-  int size = sizeof e;
-  success = inode_write_at (dir->inode, &e, size, ofs) == size;
+  success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
   
  done:
   return success;
