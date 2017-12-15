@@ -59,20 +59,16 @@ filesys_create (const char *name, off_t initial_size, int is_dir)
   struct thread *t = thread_current();
   struct dir *dir = NULL;
 
-  printf("create\n");
   split_path(name, path, file_name);
   if(strcmp(path, "") != 0 ){
     
     dir = get_dir(path);
-    printf("find dir\n");
 
   }else{
     if(t->cwd == NULL){
       dir = dir_open_root();
-            printf("root \n");
     }else{
       dir = dir_reopen(t->cwd);
-            printf("current \n");
     }
   }
 
@@ -95,22 +91,18 @@ bool filesys_mkdir (const char *name)
   struct thread *t = thread_current();
   struct dir *dir = NULL;
 
-  printf("mkdir\n");
   split_path(name, path, dir_name);
   if(strcmp(path, "") != 0 ){
     dir = get_dir(path);
-        printf("find dir\n");
 
   }else{
     if(t->cwd == NULL){
 
       dir = dir_open_root();
-                  printf("root \n");
 
     }else{
 
       dir = dir_reopen(t->cwd);
-                  printf("current \n");
 
     }
   }

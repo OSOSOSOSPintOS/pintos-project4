@@ -27,7 +27,6 @@ struct dir_entry
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
-  printf("dir create\n");
   return inode_create (sector, entry_cnt * sizeof (struct dir_entry), 1);
 }
 
@@ -147,7 +146,6 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   off_t ofs;
   bool success = false;
 
-  printf("dir %d file %s\n", dir, name);
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
 
@@ -170,7 +168,6 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
        ofs += sizeof e) 
        {
         if (!e.in_use){
-          printf("not in used\n");
           break;
         }
       }
@@ -184,11 +181,9 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   // printf("size of e %d offset %d\n", sizeof e, ofs);
 
   int size = sizeof e;
-  printf("size of e %d\n", sizeof e);
   success = inode_write_at (dir->inode, &e, size, ofs) == size;
   
  done:
-   printf("%d \n", success);
   return success;
 }
 
@@ -317,13 +312,11 @@ struct dir *get_dir(char *path){
     is_abs = true;    
   }
 
-  printf("path %s\n", copy);
 
   for(token = strtok_r(copy, "/", &ptr); token != NULL; token = strtok_r(NULL, "/", &ptr)){
 
     dirs[dir_num] = calloc(1, strlen(token) + 1);
     strlcpy(dirs[dir_num], token, strlen(token) + 1);
-    printf("token : %s, dirs : %s\n", dirs[dir_num], token );
     dir_num++;
   }
 
@@ -337,10 +330,8 @@ struct dir *get_dir(char *path){
     }
     
   }
-  printf("cur setting\n");
   for(i=0; i<dir_num; i++){
     struct inode *inode = NULL;
-      printf("dirs %s %d\n", dirs[i], dir_num);
 
     if(strcmp(dirs[i], ".") == 0){
       continue;
@@ -350,20 +341,15 @@ struct dir *get_dir(char *path){
       // parent dir
     }
     if(!dir_lookup(dir, dirs[i], &inode)){
-      printf("can't find %s\n", dirs[i]);
       for(j=0; j<dir_num; j++){
         free(dirs[j]);
       }
       return NULL;
     }
-    printf("before close\n");
 
     dir_close(dir);
-    printf("after close\n");
     dir = dir_open(inode);
-    printf("after setting\n");
     if(!dir){
-      printf("can't find %s\n", dirs[i]);
       for(j=0; j<dir_num; j++){
         free(dirs[j]);
       }
@@ -375,7 +361,6 @@ struct dir *get_dir(char *path){
     free(dirs[j]);
   }
 
-  printf("before return\n");
   return dir;
 }
 
