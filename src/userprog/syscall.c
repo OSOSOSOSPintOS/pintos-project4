@@ -113,6 +113,10 @@ syscall_handler (struct intr_frame *f)
 									 break;
 		case SYS_ISDIR: syscall_isdir(f,1);                  /* Check file is a directory */
 									 break;
+		case SYS_INUMBER: syscall_inumber(f,1);                  /* Return file's inumber */
+									 break;
+		case SYS_READDIR: syscall_readdir(f,2);                  /* Read directory entry from fd */
+									 break;
 	}	
 }
 
@@ -516,4 +520,37 @@ void syscall_chdir (struct intr_frame *f, int argsNum) {
 	bool result = dir_change(dirname);
 	f->eax = result;
 	
+}
+
+void syscall_inumber (struct intr_frame *f, int argsNum){
+	void*esp = f->esp;
+	checkARG
+
+	int fd = *(int *)(esp+4);
+
+	int result = -1;
+	struct file *file = NULL;
+	file = getFile(fd, thread_current());
+	if(file != NULL){
+		result = inode_get_inumber(file_get_inode(file));
+	}
+
+	f->eax = result;
+}
+
+void syscall_readdir (struct intr_frame *f, int argsNum){
+	void* esp = f->esp;
+
+	checkARG
+
+	int fd = *(int *)(esp+4);
+	char* dirname = *(char **)(esp+8);
+
+	int result = false;
+	struct fd_elem *fe = getElem(fd, thread_current());
+	if(fe != NULL){
+		result = dir_readdir (fe->dir, dirname);
+	}
+
+	f->eax = result;
 }

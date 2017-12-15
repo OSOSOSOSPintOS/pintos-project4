@@ -39,6 +39,10 @@ void syscall_mkdir (struct intr_frame *f, int argsNum);
 
 void syscall_chdir (struct intr_frame *f, int argsNum);
 
+void syscall_inumber (struct intr_frame *f, int argsNum);
+
+void syscall_readdir (struct intr_frame *f, int argsNum);
+
 int currentFd(struct thread *cur);
 
 struct file* getFile(int fd,struct thread *cur);
