@@ -153,6 +153,10 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   if (*name == '\0' || strlen (name) > NAME_MAX)
     return false;
 
+  if(is_inode_removed(dir->inode)){
+    return false;
+  }
+
   /* Check that NAME is not in use. */
   if (lookup (dir, name, NULL, NULL))
     goto done;
@@ -198,14 +202,23 @@ dir_remove (struct dir *dir, const char *name)
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
 
+  
+
   /* Find directory entry. */
   if (!lookup (dir, name, &e, &ofs))
     goto done;
 
   /* Open inode. */
   inode = inode_open (e.inode_sector);
+
+  
+
   if (inode == NULL)
     goto done;
+
+  if (is_inode_dir(inode) && !is_dir_empty(inode)){
+    goto done;
+  }
 
   /* Erase directory entry. */
   e.in_use = false;
@@ -214,6 +227,7 @@ dir_remove (struct dir *dir, const char *name)
 
   /* Remove inode. */
   inode_remove (inode);
+
   success = true;
 
  done:
@@ -385,3 +399,14 @@ bool dir_change(char *path){
   t->cwd = dir;
   return true;
 }
+
+bool is_dir_empty (struct inode *inode) {
+  struct dir_entry e;
+  off_t ofs;
+ 
+  for (ofs = 0; inode_read_at (inode, &e, sizeof e, ofs) == sizeof e; ofs += sizeof e) 
+  if (e.in_use)
+    return false;
+ 
+  return true;
+ }

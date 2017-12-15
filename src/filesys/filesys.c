@@ -72,6 +72,8 @@ filesys_create (const char *name, off_t initial_size, int is_dir)
     }
   }
 
+
+  
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size, 0, dir_get_inode(dir))
@@ -132,6 +134,14 @@ filesys_open (const char *name)
   char file_name[strlen(name)+1];
   struct thread *t = thread_current();
 
+  if(!strcmp(name, "/")){
+    dir = dir_open_root();
+    
+    struct file *file = file_open (dir_get_inode(dir));
+    dir_close(dir);
+    return file;
+  }
+
   split_path(name, path, file_name);
   if(strcmp(path, "") != 0 ){
     dir = get_dir(path);
@@ -141,6 +151,10 @@ filesys_open (const char *name)
     }else{
       dir = dir_reopen(t->cwd);
     }
+  }
+
+  if(!strcmp(name, ".")){
+    
   }
 
   if (dir != NULL)
@@ -162,6 +176,10 @@ filesys_remove (const char *name)
   char file_name[strlen(name)+1];
   struct thread *t = thread_current();
 
+  if(!strcmp(name, "/")){
+    return false;
+  }
+
   split_path(name, path, file_name);
   if(strcmp(path, "") != 0 ){
     dir = get_dir(path);
@@ -172,6 +190,7 @@ filesys_remove (const char *name)
       dir = dir_reopen(t->cwd);
     }
   }
+  
   bool success = dir != NULL && dir_remove (dir, file_name);
   dir_close (dir); 
 

@@ -346,7 +346,7 @@ void syscall_read(struct intr_frame *f,int argsNum){
 			if(is_inode_dir (file_get_inode (file))){
 				f->eax = -1;
 			}
-			if(file_tell(file) >= file_length(file))
+			else if(file_tell(file) >= file_length(file))
 				f->eax = 0;
 			else f->eax = file_read(file,buffer,size);
 		}
@@ -379,7 +379,7 @@ void syscall_write (struct intr_frame *f,int argsNum)
 			if(is_inode_dir (file_get_inode (file))){
 				f->eax = -1;
 			}
-			if(file_tell(file) >= file_length(file))	// EOF
+			else if(file_tell(file) >= file_length(file))	// EOF
 				f->eax = 0;
 			else f->eax = file_write(file,buffer,size);
 		}
@@ -554,3 +554,5 @@ void syscall_readdir (struct intr_frame *f, int argsNum){
 
 	f->eax = result;
 }
+
+

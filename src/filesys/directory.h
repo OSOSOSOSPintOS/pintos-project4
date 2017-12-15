@@ -32,4 +32,6 @@ void split_path(char *origin, char *dir_path, char *file_name);
 struct dir *get_dir(char *path);
 bool dir_change(char *path);
 
+bool is_dir_empty (struct inode *inode);
+
 #endif /* filesys/directory.h */

@@ -194,7 +194,8 @@ inode_close (struct inode *inode)
                             bytes_to_sectors (inode->data.length)); 
         }
 
-      free (inode); 
+      free (inode);
+      inode = NULL; 
     }
 }
 
@@ -377,4 +378,8 @@ bool is_inode_dir(struct inode *inode){
 
 struct inode *inode_get_parent(struct inode *inode){
   return inode->parent;
+}
+
+bool is_inode_removed(struct inode *inode){
+	return inode->removed;
 }
