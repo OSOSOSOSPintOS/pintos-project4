@@ -158,8 +158,11 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   }
 
   /* Check that NAME is not in use. */
-  if (lookup (dir, name, NULL, NULL))
-    goto done;
+  if (lookup (dir, name, NULL, NULL)){
+    // printf("error lookup\n");
+        goto done;
+
+  }
 
   /* Set OFS to offset of free slot.
      If there are no free slots, then it will be set to the
@@ -182,6 +185,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   
   // printf("size of e %d offset %d\n", sizeof e, ofs);
 
+  printf("size %d offset %d\n", sizeof e, ofs);
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
   
  done:

@@ -23,4 +23,13 @@ bool is_inode_dir(struct inode *);
 struct inode *inode_get_parent(struct inode *);
 bool is_inode_removed(struct inode *);
 
+// bool inode_alloc(struct inode_disk *,block_sector_t);
+// int inode_direct_alloc(struct inode_disk *, block_sector_t);
+// int inode_indirect_alloc(struct inode_disk *, block_sector_t);
+// int inode_doubly_indirect_alloc(struct inode_disk *, block_sector_t);
+
+// bool inode_delloc(struct inode_disk *, block_sector_t );
+// int inode_direct_delloc(struct inode_disk *, block_sector_t );
+// int inode_indirect_delloc(struct inode_disk *, block_sector_t );
+// int inode_doubly_indirect_delloc(struct inode_disk *, block_sector_t );
 #endif /* filesys/inode.h */

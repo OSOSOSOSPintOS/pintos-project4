@@ -72,6 +72,7 @@ filesys_create (const char *name, off_t initial_size, int is_dir)
     }
   }
 
+  // printf("path %s dir %d name %s\n", path, dir, file_name);
 
   
   bool success = (dir != NULL
