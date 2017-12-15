@@ -18,8 +18,9 @@ struct inode_disk
     block_sector_t start;               /* First data sector. */
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[124];               /* Not used. */
+    uint32_t unused[123];               /* Not used. */
     uint32_t is_dir;
+    uint32_t parent;
   };
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -40,6 +41,7 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     int is_dir;
     struct inode_disk data;             /* Inode content. */
+    struct inode* parent;
   };
 
 /* Returns the block device sector that contains byte offset POS
@@ -73,7 +75,7 @@ inode_init (void)
    Returns true if successful.
    Returns false if memory or disk allocation fails. */
 bool
-inode_create (block_sector_t sector, off_t length, int is_dir)
+inode_create (block_sector_t sector, off_t length, int is_dir, void *parent)
 {
   struct inode_disk *disk_inode = NULL;
   bool success = false;
@@ -91,6 +93,7 @@ inode_create (block_sector_t sector, off_t length, int is_dir)
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
       disk_inode->is_dir = is_dir;
+      disk_inode->parent = (uint32_t)parent;
       if (free_map_allocate (sectors, &disk_inode->start)) 
         {
           block_write (fs_device, sector, disk_inode);
@@ -146,6 +149,7 @@ inode_open (block_sector_t sector)
   inode->removed = false;
   block_read (fs_device, inode->sector, &inode->data);
   inode->is_dir = inode->data.is_dir;
+  inode->parent = (struct inode *)inode->data.parent;
   return inode;
 }
 
@@ -369,4 +373,8 @@ bool is_inode_dir(struct inode *inode){
   }else{
     return false;
   }
+}
+
+struct inode *inode_get_parent(struct inode *inode){
+  return inode->parent;
 }
